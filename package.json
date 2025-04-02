@@ -1,0 +1,8 @@
+{
+  "name": "streamfusion-content-detector",
+  "version": "1.0.0",
+  "description": "Detector automático de contenido para StreamFusion",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
