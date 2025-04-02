@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFusion - Información de Película</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://api.themoviedb.org">
+    <link rel="preconnect" href="https://image.tmdb.org">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --background-primary: #121212;
+            --background-secondary: #1E1E1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #dedede;
+            --accent-primary: #00E8FC;
+            --accent-secondary: #7B42F6;
+            --ui-element: #2C2C2C;
+            --ui-hover: #454545;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--background-primary);
+            color: var(--text-primary);
+            text-align: center;   
+            margin: 0;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: var(--background-secondary);
+            color: var(--text-primary);
+            padding: 0.2rem 0;
+            display: flex;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            align-items: center;
+            height: 40px;
+        }
+        .header-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding-right: 0px;
+        }
+        .logo {
+            margin-left: 0.2rem;
+        }
+        h1 {
+            display: flex;
+            font-size: 1.5rem;
+            margin: 0;
+            padding: 0;
+            flex-wrap: nowrap;            
+            text-align: center;
+            align-items: center;
+        }
+        .highlight {
+            color: var(--accent-primary);
+        }
+        .secondary-highlight {
+            color: var(--accent-secondary);
+        }
+        .back-link, .report {
+            display: block;
+            text-decoration: none;
+            color: var(--text-secondary);
+            padding: 10px;
+            font-size: 1.2rem;
+            transition: color 0.3s ease, background-color 0.3s ease;
+        }
+        .back-link:hover, .report:hover {
+            color: var(--text-primary);
+            background-color: var(--ui-hover);
+        }
+        .back-link i, .report i {
+            margin-right: 10px;
+        }
+        .movie-info-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 0px;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 40px;
+        }
+        .movie-info {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: left;
+            padding: 10px;
+            background-color: var(--background-secondary);
+            border-radius: 10px;
+        }
+        .loading-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--ui-element);
+            border-radius: 50%;
+            border-top-color: var(--accent-primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (min-width: 1401px) {
+            .container {
+                display: flex;
+                height: calc(100vh - 40px);
+            }
+            .player {
+                display: flex;
+                width: 60%;
+                height: 100%;
+                position: sticky;
+                top: 40px;
+                background-color: var(--background-primary);
+                flex-direction: column;
+            }
+            .videoPlayer {
+               height: calc(100% - 40px);
+               padding: 1vw;
+               position: relative;
+            }
+            .videoPlayer iframe {
+                width: 100%;
+                height: 100%;
+                border: 2px solid var(--accent-secondary);
+                border-radius: 10px;
+            }
+            .sidebar {
+                width: 40%;
+                padding: 5px;
+                box-sizing: border-box;
+                overflow-y: auto;
+                height: 100%;
+            }
+            .sidebar .section {
+                margin-bottom: 30px;
+            }
+            h3 {
+                font-size: 1rem;
+                margin-top: 1px;
+                margin-bottom: 1px;
+                color: var(--text-secondary);
+            }
+            .movie-details {
+                flex: 0 0 70%;
+                max-width: 70%;
+                background-color: var(--background-secondary);
+                padding-left: 10px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                flex-direction: column;
+                max-height: 100%;
+            }
+            .movie-details h2 {
+                font-size: 1.5vw;
+                line-height: 1;
+                margin-bottom: 0px;
+                margin-top: 0;
+                color: var(--accent-secondary);
+            }
+            .movie-details p {
+                font-size: 1.3vw;
+                line-height: 0.9;
+                margin-bottom: 8px;
+                color: var(--text-secondary);
+            }
+            .related-movies {
+                display: none;
+            }
+            .related-movies-2 .content-2 {
+                display: flex;
+                scroll-snap-type: x mandatory;
+                gap: 5px;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+            .related-movies-2 {
+                display: flex;
+                height: 40%;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                margin: 0.5vw;
+                border-radius: 10px;
+            }
+            .text-h3-1 {
+                display: none;
+            }
+            .text-h3-0 {
+                padding-top: 0.5vw;
+            }
+            .related-movies-2::-webkit-scrollbar {
+                height: 8px;
+            }
+            .related-movies-2::-webkit-scrollbar-thumb {
+                background-color: var(--ui-element);
+                border-radius: 4px;
+            }
+            .related-movies-2::-webkit-scrollbar-track {
+                background-color: var(--background-secondary);
+            }
+            .related-movies-2 .item {
+                scroll-snap-align: start;
+                flex: 0 0 auto;
+                width: 200px;
+                padding-right: 0.3em;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .related-movies-2 .item img {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                border-radius: 10px;
+                transition: transform 0.3s ease;
+            }
+            .related-movies-2 .item:hover img {
+                transform: scale(1.05);
+            }
+            .related-movies-2 .item-title {
+                margin-top: 5px;
+                font-size: 14px;
+                text-align: center;
+                color: var(--text-primary);
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                padding: 5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+            .related-movies-2 a {
+                text-decoration: none;
+                color: inherit;
+            }
+            .movie-poster { 
+                flex: 0 0 30%;
+                max-width: 30%;
+            }
+            #moviePoster {
+                max-width: 100%;
+                height: auto;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+            }
+            .movie-overview {
+                background-color: var(--ui-element);
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                max-width: 1000px;
+                margin: 15px auto;
+                text-align: left;
+                font-size: 1.3em;
+                color: var(--text-secondary);
+            }
+            html, body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+        }
+ 
+        @media (min-width: 600px) and (max-width: 1400px) {
+            .container {
+                display: flex;
+                height: calc(100vh - 40px);
+            }
+            .player {
+                display: flex;
+                width: 60%;
+                height: 100%;
+                position: sticky;
+                top: 40px;
+                background-color: var(--background-primary);
+                flex-direction: column;
+            }
+            .videoPlayer {
+               height: calc(100% - 40px);
+               padding: 1vw;
+            }
+            .videoPlayer iframe {
+                width: 100%;
+                height: 100%;
+                border: 2px solid var(--accent-secondary);
+                border-radius: 10px;
+            }
+            .sidebar {
+                width: 40%;
+                padding: 5px;
+                box-sizing: border-box;
+                overflow-y: auto;
+                height: 100%;
+            }
+            .sidebar .section {
+                margin-bottom: 30px;
+            }
+            h3 {
+                font-size: 1rem;
+                margin-top: 1px;
+                margin-bottom: 1px;
+                color: var(--text-secondary);
+            }
+            .movie-details {
+                flex: 0 0 70%;
+                max-width: 70%;
+                background-color: var(--background-secondary);
+                padding-left: 10px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                flex-direction: column;
+                max-height: 100%;
+            }
+            .movie-details h2 {
+                font-size: 1.5vw;
+                line-height: 1;
+                margin-bottom: 0px;
+                margin-top: 0;
+                color: var(--accent-secondary);
+            }
+            .movie-details p {
+                font-size: 1.3vw;
+                line-height: 0.9;
+                margin-bottom: 8px;
+                color: var(--text-secondary);
+            }
+            .related-movies {
+                display: none;
+            }
+            .related-movies-2 .content-2 {
+                display: flex;
+                scroll-snap-type: x mandatory;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+            .related-movies-2 {
+                display: flex;
+                height: 40%;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                margin: 0.5vw;
+                border-radius: 10px;
+            }
+            .text-h3-1 {
+                display: none;
+            }
+            .text-h3-0 {
+                padding-top: 0.5vw;
+            }
+            .related-movies-2::-webkit-scrollbar {
+                height: 8px;
+            }
+            .related-movies-2::-webkit-scrollbar-thumb {
+                background-color: var(--ui-element);
+                border-radius: 4px;
+            }
+            .related-movies-2::-webkit-scrollbar-track {
+                background-color: var(--background-secondary);
+            }
+            .related-movies-2 .item {
+                scroll-snap-align: start;
+                flex: 0 0 auto;
+                width: 120px;
+                padding-right: 0.3em;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .related-movies-2 .item img {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                border-radius: 10px;
+                transition: transform 0.3s ease;
+            }
+            .related-movies-2 .item:hover img {
+                transform: scale(1.05);
+            }
+            .related-movies-2 .item-title {
+                margin-top: 5px;
+                font-size: 14px;
+                text-align: center;
+                color: var(--text-primary);
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                padding: 5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+            .related-movies-2 a {
+                text-decoration: none;
+                color: inherit;
+            }
+            .movie-poster { 
+                flex: 0 0 30%;
+                max-width: 30%;
+            }
+            #moviePoster {
+                max-width: 100%;
+                height: auto;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+            }
+            .movie-overview {
+                background-color: var(--ui-element);
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                max-width: 1000px;
+                margin: 15px auto;
+                text-align: left;
+                font-size: 1.3em;
+                color: var(--text-secondary);
+            }
+            html, body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+          .item-rating {
+              position: absolute;
+              top: 8px;
+              left: 8px;
+              background: rgba(0, 0, 0, 0.7);
+              color: #00b2ff;
+              font-size: 14px;
+              font-weight: bold;
+              padding: 4px 8px;
+              border-radius: 5px;
+          }
+        }
+
+        @media (max-width: 599px) {
+            .player {
+                height: 230px;
+                position: sticky;
+                top: 40px;
+                background-color: var(--background-primary);
+                z-index: 1;
+            }
+            .videoPlayer {
+                height: 100%;
+                background: var(--background-primary);
+                position: relative;
+            }
+            .videoPlayer iframe {
+                width: 100%;
+                height: 100%;
+                border-bottom: 2px solid var(--accent-secondary);
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+            .content {
+                padding: 5px;
+            }
+            .movie-details {
+                flex: 0 0 70%;
+                max-width: 70%;
+                background-color: var(--background-secondary);
+                padding-left: 10px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                flex-direction: column;
+            }
+            .movie-details h2 {
+                font-size: 4vw;
+                line-height: 1.4;
+                margin-bottom: 8px;
+                margin-top: 0;
+                color: var(--accent-secondary);
+            }
+            .movie-details p {
+                font-size: 3vw;
+                line-height: 1.1;
+                margin-bottom: 8px;
+                color: var(--text-secondary);
+            }
+            .related-movies .content{
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                margin-top: 5px;
+            }
+            .related-movies-2 .content-2 {
+                display: none;
+            }
+            .text-h3-0 {
+                display: none;
+            }
+            .text-h3-1 {
+                padding-top: 0.5vw;
+            }
+            h3 {
+                font-size: 1rem;
+                margin-top: 1px;
+                margin-bottom: 1px;
+                color: var(--text-secondary);
+            }
+            .related-movies .item {                        
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+            .related-movies .item img {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                border-radius: 10px;
+                transition: transform 0.3s ease;
+            }
+            .related-movies .item:hover img {
+                transform: scale(1.05);
+            }
+            .related-movies .item-title {
+                margin-top: 5px;
+                font-size: 14px;
+                text-align: center;
+                color: var(--text-primary);
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                padding: 5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
+            }
+            .related-movies a {
+                text-decoration: none;
+                color: inherit;
+            }
+            .movie-poster {
+                flex: 0 0 30%;
+                max-width: 30%;
+            }
+            #moviePoster {
+                max-width: 100%;
+                height: auto;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+            }
+            .movie-overview {
+                background-color: var(--ui-element);
+                padding: 10px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                max-width: 1000px;
+                margin: 10px auto;
+                text-align: left;
+                color: var(--text-secondary);
+            }
+        }
+      
+        .item-rating {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #00b2ff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 5px;
+        }
+
+        .reload-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            z-index: 10;
+        }
+
+        .reload-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        .reload-button:active {
+            transform: scale(0.95);
+        }
+
+        .reload-button i {
+            transition: transform 0.5s;
+        }
+
+        .reload-button.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 18, 18, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .page-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .fallback-poster {
+            background-color: var(--ui-element);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-radius: 10px;
+        }
+ 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Estilos para el modal de detalles */
+        .movie-details-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 3000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(5px);
+        }
+
+        .modal-container {
+          position: relative;
+          width: 90%;
+          max-width: 900px;
+          max-height: 90vh;
+          background-color: var(--background-secondary);
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          animation: fadeIn 0.3s, slideUp 0.3s;
+          z-index: 3001;
+        }
+
+        .modal-backdrop {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-size: cover;
+          background-position: center top;
+          z-index: -1;
+        }
+
+        .modal-backdrop-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(to bottom, rgba(30, 30, 30, 0.7) 0%, var(--background-secondary) 100%);
+        }
+
+        .modal-content {
+          position: relative;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          padding: 2rem;
+        }
+
+        .modal-close {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background-color: rgba(0, 0, 0, 0.5);
+          color: white;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.2rem;
+          z-index: 10;
+          transition: background-color 0.3s;
+          border: none;
+          cursor: pointer;
+        }
+
+        .modal-close:hover {
+          background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+          display: flex;
+          gap: 2rem;
+        }
+
+        .modal-poster {
+          flex: 0 0 200px;
+        }
+
+        .modal-poster img {
+          width: 100%;
+          border-radius: 10px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .modal-title {
+          font-size: 2rem;
+          font-weight: 700;
+          line-height: 1.2;
+          color: var(--text-primary);
+        }
+
+        .modal-meta {
+          display: flex;
+          gap: 1rem;
+          color: var(--text-secondary);
+        }
+
+        .modal-rating {
+          color: var(--accent-primary);
+        }
+
+        .modal-genres {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .modal-genre {
+          background-color: rgba(255, 255, 255, 0.1);
+          padding: 0.3rem 0.8rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+        }
+
+        .modal-overview {
+          line-height: 1.6;
+          color: var(--text-secondary);
+          margin-bottom: 1rem;
+        }
+
+        .modal-details {
+          display: flex;
+          flex-direction: column;
+          gap: 0.8rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .modal-detail {
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+
+        .detail-label {
+          font-weight: 600;
+          color: var(--accent-primary);
+        }
+
+        .detail-value {
+          color: var(--text-secondary);
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 1rem;
+          margin-top: auto;
+        }
+
+        .modal-actions .btn {
+          padding: 0.8rem 1.8rem;
+          border-radius: 4px;
+          font-weight: 600;
+          font-size: 1rem;
+          transition: all 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          cursor: pointer;
+          border: none;
+        }
+
+        .modal-actions .btn-primary {
+          background-color: var(--accent-primary);
+          color: var(--background-primary);
+        }
+
+        .modal-actions .btn-primary:hover {
+          background-color: #00c5d6;
+          transform: translateY(-2px);
+        }
+
+        .modal-loading, .modal-error {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 3rem;
+          text-align: center;
+        }
+
+        .modal-error i {
+          font-size: 3rem;
+          color: #f87171;
+          margin-bottom: 1rem;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Responsive modal styles */
+        @media (max-width: 768px) {
+          .modal-header {
+            flex-direction: column;
+            gap: 1.5rem;
+          }
+          
+          .modal-poster {
+            flex: 0 0 auto;
+            max-width: 180px;
+            margin: 0 auto;
+          }
+          
+          .modal-title {
+            font-size: 1.5rem;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .modal-content {
+            padding: 1.5rem;
+          }
+          
+          .modal-genres {
+            gap: 0.3rem;
+          }
+          
+          .modal-genre {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.6rem;
+          }
+        }
+    </style>
+</head>
+<body>
+    <div id="pageLoader" class="page-loader">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <header>
+        <div class="logo">
+            <a href="go:home" class="back-link"><i class="fas fa-chevron-left"></i></a>
+        </div>
+        <div class="header-content">      	
+            <h1><span class="highlight">Stream</span><span class="secondary-highlight">Fusion</span></h1>
+        </div>
+        <div class="logo">
+            <a href="go:sr" class="report"><i class="fas fa-exclamation"></i></a>
+        </div>
+    </header>
+    <div class="container">
+        <div class="player">
+            <div class="videoPlayer">
+                <iframe id="videoPlayer" width="100%" height="100%" src="about:blank" data-src="https://unlimplayer.top/embed/ovef0zibudjirg5" frameborder="0" allowfullscreen></iframe>
+                <button id="reloadButton" class="reload-button" title="Recargar video">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="text-h3-0">
+                <h3>También te podría gustar!</h3>
+            </div>
+            <div class="related-movies-2">
+                <div class="content-2" id="relatedContent2">
+                    <div class="loading-spinner" id="relatedLoader2" style="margin: 20px auto;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar">
+            <div class="movie-info">
+                <div class="movie-poster">
+                    <img id="moviePoster" alt="Poster de la película" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJDMkMyQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNkZWRlZGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkNhcmdhbmRvLi4uPC90ZXh0Pjwvc3ZnPg==">
+                </div>
+                <div class="movie-details">
+                    <h2 id="movieTitle">Cargando...</h2>
+                    <p id="movieReleaseDate">Año: ...</p>
+                    <p id="movieGenres">Categorías: ...</p>
+                    <p id="movieDirector">Director: ...</p>
+                    <p id="movieActors">Actores principales: ...</p>
+                </div>
+            </div>
+            <div class="movie-overview">
+                <p id="movieOverview">Cargando descripción...</p>
+            </div>
+
+            <div class="text-h3-1">
+                <h3>También te podría gustar!</h3>
+            </div>
+            <div class="related-movies">
+                <div class="content" id="relatedContent">
+                    <div class="loading-spinner" id="relatedLoader" style="margin: 20px auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Movie Details Modal Container -->
+    <div id="movie-details-modal-container"></div>
+
+    <script>
+        const apiKey = '32e5e53999e380a0291d66fb304153fe';
+        const IMG_BASE_URL = "https://image.tmdb.org/t/p";
+        let currentVideoUrl = '';
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+        let loadedResources = {
+            movieData: false,
+            relatedMovies: false,
+            video: false
+        };
+
+        function checkAllResourcesLoaded() {
+            if (loadedResources.movieData && loadedResources.relatedMovies && loadedResources.video) {
+                const pageLoader = document.getElementById('pageLoader');
+                if (pageLoader) {
+                    pageLoader.classList.add('hidden');
+                    setTimeout(() => {
+                        pageLoader.style.display = 'none';
+                    }, 500);
+                }
+            }
+        }
+
+        function handleImageError(img, fallbackUrl) {
+            img.onerror = null;
+            if (fallbackUrl) {
+                img.src = fallbackUrl;
+            } else {
+                const svgFallback = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJDMkMyQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNkZWRlZGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkltYWdlbiBubyBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg==`;
+                img.src = svgFallback;
+            }
+            console.log('Imagen reemplazada con fallback');
+        }
+
+        async function getConfiguration() {
+            try {
+                const response = await fetch(`https://api.themoviedb.org/3/configuration?api_key=${apiKey}`);
+                if (!response.ok) throw new Error(`Error de configuración: ${response.status}`);
+                const data = await response.json();
+                return data.images.base_url;
+            } catch (error) {
+                console.error('Error al obtener configuración:', error);
+                return 'https://image.tmdb.org/t/p/';
+            }
+        }
+
+        async function fetchMovieData() {
+            const movieId = 786892;
+
+            try {
+                const [baseUrl, movieData] = await Promise.all([
+                    getConfiguration(),
+                    fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${apiKey}&language=es-ES&append_to_response=credits`).then(res => {
+                        if (!res.ok) throw new Error(`Error al obtener datos de película: ${res.status}`);
+                        return res.json();
+                    })
+                ]);
+
+                const posterPath = movieData.poster_path;
+                const posterUrl = `${baseUrl}w500${posterPath}`;
+                
+                document.getElementById('movieTitle').innerText = movieData.title || 'Título no disponible';
+                document.getElementById('movieReleaseDate').innerText = `Año: ${movieData.release_date ? new Date(movieData.release_date).getFullYear() : 'No disponible'}`;
+                document.getElementById('movieGenres').innerText = `Categorías: ${movieData.genres && movieData.genres.length > 0 ? movieData.genres.map(genre => genre.name).join(', ') : 'No disponible'}`;
+                
+                const director = movieData.credits && movieData.credits.crew ? 
+                    movieData.credits.crew.find(crewMember => crewMember.job === 'Director')?.name || 'No disponible' : 
+                    'No disponible';
+                document.getElementById('movieDirector').innerText = `Director: ${director}`;
+                
+                const actors = movieData.credits && movieData.credits.cast && movieData.credits.cast.length > 0 ? 
+                    movieData.credits.cast.slice(0, 5).map(actor => actor.name).join(', ') : 
+                    'No disponible';
+                document.getElementById('movieActors').innerText = `Actores principales: ${actors}`;
+                
+                const posterImg = document.getElementById('moviePoster');
+                posterImg.onload = function() {
+                    adjustDetailsHeight();
+                };
+                posterImg.onerror = function() {
+                    handleImageError(this);
+                };
+                posterImg.src = posterUrl;
+                
+                document.getElementById('movieOverview').innerText = movieData.overview || 'Descripción no disponible';
+                
+                loadedResources.movieData = true;
+                checkAllResourcesLoaded();
+                
+                adjustDetailsHeight();
+            } catch (error) {
+                console.error('Error al cargar datos de la película:', error);
+                
+                document.getElementById('movieTitle').innerText = 'Error al cargar datos';
+                document.getElementById('movieOverview').innerText = 'No se pudieron cargar los datos de la película. Por favor, intente recargar la página.';
+                
+                loadedResources.movieData = true;
+                checkAllResourcesLoaded();
+            }
+        }
+
+        function adjustDetailsHeight() {
+            const poster = document.getElementById('moviePoster');
+            const details = document.querySelector('.movie-details');
+
+            if (poster && details && poster.complete) {
+                details.style.height = `${poster.clientHeight}px`;
+            }
+        }
+       
+        function fetchRelatedMovies() {
+            const moviesIDs = [822119, 1241982, 993710, 851644, 500664, 530254, 615173, 823219, 1357633, 12477, 402431, 558449, 539972, 939243, 1184918, 912649, 157350, 262500, 262504, 9316, 43209, 11238, 297761, 436969, 508442, 530915, 49046, 497582, 829280, 700391, 315162, 632856, 338958, 605886, 620705, 455476, 816904, 748167, 456740, 11253, 354912, 929590, 365177, 588228, 61979, 818647, 646097, 961323, 413518, 532639, 555604, 10895, 862, 863, 10193, 301528, 213121, 256835, 594530, 15167, 168903, 13002, 1729, 957452, 917496, 346698, 250546, 396422, 521029,37135, 258489, 230222, 13683, 15657, 22794, 109451, 8960, 832502, 254, 177572, 8587, 9732, 420818, 11430, 9502, 49444, 140300, 10601, 10693, 420808, 16690, 381719, 522478, 11970, 184315, 505026, 512195, 329996, 11224, 14128, 16119, 150689, 13179, 297270, 44683, 175112, 25475, 75258, 614409, 565426, 466282, 15213, 545611, 118, 458897, 9471, 4327, 240832, 1979, 166424, 22832, 133805, 7342, 1075794, 71676, 1250, 447277, 298618, 579741, 75656, 291805, 930600, 438148, 20352, 93456, 324852, 397567, 518068, 378236, 10681, 12244, 454626, 675353, 708336, 832227, 336560, 9035, 14564, 607836, 473165, 44896, 1368, 1369, 1370, 7555, 522938, 9757, 970347, 1032823, 748783, 8920, 9513, 371608, 10665, 877269, 27578, 138103, 299054, 953, 10527, 80321, 270946, 624860, 605, 604, 603, 1029955, 454286, 249660, 347126, 793285, 1079091, 459003, 1096197, 118340, 283995, 447365, 597, 1226578, 333339, 945961, 9334, 13486, 297291, 287947, 594767, 62177, 1094138, 960704, 417261, 238215, 6479, 715931, 495764, 38757, 295693, 459151, 10555, 760741, 58595, 290595, 585511, 447332, 8844, 353486, 512200, 568124, 497698, 436270, 80278, 363676, 49047, 1151534, 1593, 18360, 181533, 72105, 214756, 271110, 1771, 100402, 831815, 9023, 10501, 13186, 23823, 71672, 125509, 259072, 9902, 862855, 399579, 1059064, 346910, 766507, 4247, 4248, 4256, 4257, 4258, 580489, 335983, 791373, 297802, 284053, 488623, 974262, 961268, 588648, 1129598, 46019, 1308757, 26466, 916224, 508439, 718821, 16353, 9799, 584, 168259, 9615, 13804, 51497, 49529, 9806, 664413, 829560, 829557, 533535, 11237, 205584, 653346, 931405, 150540, 408355, 505642, 640146, 630004, 76600, 653349, 693134, 76341, 98, 277834, 400160, 82992, 337339, 385128, 384018, 385687, 593910, 572802, 565770, 284054, 299536, 786892, 324857, 274854, 550205, 260513, 399566, 299534, 1022789, 359410, 629176, 634649, 848326, 315635,429617, 557, 527774, 12153, 1930, 559, 558,  573435, 519182, 102899, 363088, 639720, 466420, 1029528, 1019411, 1010581, 823464, 1011985, 269149, 955916, 985939, 1001311, 454983, 583083, 727745, 603692, 324552, 245891, 704673, 99861, 566525, 24428,  1026999, 987686, 955555, 626412, 940551, 109445, 330457, 508883,447200, 967847,  614933, 280180, 987686, 1134433, 1025463, 829402, 940721, 1023922, 984324, 934632, 634492, 762441, 809, 1016346, 1291559, 901362, 739547, 872585,1094844, 838209, 1243895, 76163, 866398, 1239251, 969492, 438631, 1022796, 641934, 458156, 502356, 974635, 569094, 763215, 293660, 976573, 335977, 746036, 682201, 1115623, 575264, 508947, 678512, 897087, 784651, 1231574, 916224, 445030, 680041, 372058, 667520, 79707, 876792];
+
+            const BASE_URL = 'https://api.themoviedb.org/3';
+            const IMG_URL = 'https://image.tmdb.org/t/p/';
+            const LANGUAGE = 'es-MX';
+
+            // Seleccionar aleatoriamente 18 películas
+            const shuffled = moviesIDs.sort(() => 0.5 - Math.random());
+            const selectedMovies = shuffled.slice(0, 18);
+
+            // Crear todas las promesas de fetch
+            const fetchPromises = selectedMovies.map(id =>
+                fetch(`${BASE_URL}/movie/${id}?api_key=${apiKey}&language=${LANGUAGE}`)
+                    .then(response => response.json())
+            );
+
+            // Ejecutar todas las promesas en paralelo
+            Promise.all(fetchPromises)
+                .then(movies => {
+                    document.getElementById('relatedLoader').style.display = 'none';
+                    document.getElementById('relatedLoader2').style.display = 'none';
+
+                    // Procesar las películas en lotes para mejorar el rendimiento
+                    const processMoviesInBatches = (movies, startIndex, batchSize) => {
+                        const endIndex = Math.min(startIndex + batchSize, movies.length);
+                        const batch = movies.slice(startIndex, endIndex);
+
+                        batch.forEach((item, index) => {
+                            const actualIndex = startIndex + index;
+                            const containerClass = actualIndex < 6 ? '.related-movies .content' : '.related-movies-2 .content-2';
+                            const container = document.querySelector(containerClass);
+
+                            if (!container) return;
+
+                            const div = document.createElement('div');
+                            div.classList.add('item');
+                            
+                            // Crear la imagen con un placeholder mientras carga
+                            const posterPath = item.poster_path;
+                            const posterUrl = posterPath ? `${IMG_URL}w500${posterPath}` : null;
+                            
+                            div.innerHTML = `
+                                <a href="go:${item.id}" target="_blank" rel="noreferrer">
+                                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJDMkMyQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNkZWRlZGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkNhcmdhbmRvLi4uPC90ZXh0Pjwvc3ZnPg==" 
+                                        data-src="${posterUrl}" 
+                                        alt="${item.title}" 
+                                        loading="lazy">
+                                    <div class="item-rating">⭐ ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}</div>
+                                    <div class="item-title">${item.title}</div>                        
+                                </a>
+                            `;
+                            container.appendChild(div);
+
+                            // Cargar la imagen real después de añadir al DOM
+                            const img = div.querySelector('img');
+                            if (posterUrl) {
+                                const actualImg = new Image();
+                                actualImg.onload = () => {
+                                    img.src = posterUrl;
+                                };
+                                actualImg.onerror = () => {
+                                    handleImageError(img);
+                                };
+                                actualImg.src = posterUrl;
+                            } else {
+                                handleImageError(img);
+                            }
+                        });
+
+                        // Procesar el siguiente lote si hay más películas
+                        if (endIndex < movies.length) {
+                            setTimeout(() => {
+                                processMoviesInBatches(movies, endIndex, batchSize);
+                            }, 50); // Pequeño retraso para no bloquear el hilo principal
+                        } else {
+                            // Todos los lotes procesados
+                            loadedResources.relatedMovies = true;
+                            checkAllResourcesLoaded();
+                        }
+                    };
+
+                    // Iniciar el procesamiento por lotes (6 películas a la vez)
+                    processMoviesInBatches(movies, 0, 6);
+                })
+                .catch(error => {
+                    console.error('Error fetching related movies:', error);
+                    loadedResources.relatedMovies = true;
+                    checkAllResourcesLoaded();
+                });
+        }
+
+        function loadVideo(videoUrl) {
+            return new Promise((resolve, reject) => {
+                currentVideoUrl = videoUrl;
+                const iframe = document.getElementById("videoPlayer");
+                
+                iframe.onload = function() {
+                    console.log('Video cargado correctamente');
+                    loadedResources.video = true;
+                    checkAllResourcesLoaded();
+                    resolve();
+                };
+                
+                iframe.onerror = function() {
+                    console.error('Error al cargar el video');
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        console.log(`Reintentando cargar video (${retryCount}/${MAX_RETRIES})...`);
+                        setTimeout(() => {
+                            iframe.src = 'about:blank';
+                            setTimeout(() => {
+                                iframe.src = videoUrl;
+                            }, 500);
+                        }, 1000);
+                    } else {
+                        loadedResources.video = true;
+                        checkAllResourcesLoaded();
+                        reject(new Error('No se pudo cargar el video después de varios intentos'));
+                    }
+                };
+                
+                iframe.src = videoUrl;
+                
+                setTimeout(() => {
+                    if (!loadedResources.video) {
+                        loadedResources.video = true;
+                        checkAllResourcesLoaded();
+                        console.log('Tiempo de carga del video excedido, continuando con la interfaz');
+                        resolve();
+                    }
+                }, 10000);
+            });
+        }
+
+        function reloadCurrentVideo() {
+            const reloadButton = document.getElementById("reloadButton");
+            reloadButton.classList.add('loading');
+            
+            const iframe = document.getElementById("videoPlayer");
+            iframe.src = 'about:blank';
+            
+            setTimeout(() => {
+                iframe.src = currentVideoUrl;
+                setTimeout(() => {
+                    reloadButton.classList.remove('loading');
+                }, 1000);
+            }, 1000);
+        }
+
+        function loadLazyImages() {
+            const lazyImages = document.querySelectorAll('img[data-src]');
+            lazyImages.forEach(img => {
+                if (img.dataset.src) {
+                    const actualImg = new Image();
+                    actualImg.onload = function() {
+                        img.src = img.dataset.src;
+                        img.removeAttribute('data-src');
+                    };
+                    actualImg.onerror = function() {
+                        handleImageError(img);
+                        img.removeAttribute('data-src');
+                    };
+                    actualImg.src = img.dataset.src;
+                }
+            });
+        }
+
+        // Función para mostrar el modal de detalles de película
+        function showMovieDetailsModal(itemId) {
+            const modalContainer = document.getElementById('movie-details-modal-container');
+            if (!modalContainer) return;
+            
+            // Crear el HTML del modal con el spinner de carga
+            modalContainer.innerHTML = `
+                <div class="movie-details-modal">
+                    <div class="modal-overlay"></div>
+                    <div class="modal-container">
+                        <div class="modal-loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Función para cerrar el modal
+            const closeModal = () => {
+                modalContainer.innerHTML = '';
+            };
+            
+            // Agregar event listener al overlay para cerrar el modal
+            document.querySelector('.modal-overlay').addEventListener('click', closeModal);
+            
+            // Obtener y mostrar los detalles de la película
+            fetchMovieDetails(itemId, closeModal);
+        }
+        
+        // Función para obtener los detalles de la película
+        async function fetchMovieDetails(itemId, closeModal) {
+            try {
+                // Obtener detalles básicos
+                const detailsResponse = await fetch(
+                    `https://api.themoviedb.org/3/movie/${itemId}?api_key=${apiKey}&language=es-MX`
+                );
+                
+                if (!detailsResponse.ok) {
+                    throw new Error('No se pudo cargar la información');
+                }
+                
+                const details = await detailsResponse.json();
+                
+                // Obtener créditos (reparto y equipo)
+                const creditsResponse = await fetch(
+                    `https://api.themoviedb.org/3/movie/${itemId}/credits?api_key=${apiKey}&language=es-MX`
+                );
+                
+                if (!creditsResponse.ok) {
+                    throw new Error('No se pudo cargar la información del reparto');
+                }
+                
+                const credits = await creditsResponse.json();
+                
+                // Obtener el director
+                const director = credits.crew.find(person => person.job.toLowerCase() === 'director');
+                const directorName = director ? director.name : 'No disponible';
+                
+                // Obtener el reparto principal (top 5)
+                const mainCast = credits.cast.slice(0, 5).map(actor => actor.name).join(', ') || 'No disponible';
+                
+                // Formatear duración
+                const formatRuntime = (minutes) => {
+                    if (!minutes) return 'No disponible';
+                    const hours = Math.floor(minutes / 60);
+                    const mins = minutes % 60;
+                    return `${hours}h ${mins}m`;
+                };
+                
+                // Formatear fecha (solo año)
+                const formatDate = (dateString) => {
+                    if (!dateString) return 'No disponible';
+                    return new Date(dateString).getFullYear().toString();
+                };
+                
+                // Crear HTML de géneros
+                const genresHTML = details.genres.map(genre => 
+                    `<span class="modal-genre">${genre.name}</span>`
+                ).join('');
+                
+                // Actualizar el contenido del modal
+                const modalContainer = document.querySelector('.modal-container');
+                modalContainer.innerHTML = `
+                    ${details.backdrop_path ? `
+                        <div class="modal-backdrop" style="background-image: url('${IMG_BASE_URL}/original${details.backdrop_path}')">
+                            <div class="modal-backdrop-overlay"></div>
+                        </div>
+                    ` : ''}
+                    <div class="modal-content">
+                        <button class="modal-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="modal-header">
+                            <div class="modal-poster">
+                                <img 
+                                    src="${details.poster_path ? `${IMG_BASE_URL}/w500${details.poster_path}` : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJDMkMyQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiNkZWRlZGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkltYWdlbiBubyBkaXNwb25pYmxlPC90ZXh0Pjwvc3ZnPg=='}" 
+                                    alt="${details.title}" 
+                                />
+                            </div>
+                            <div class="modal-info">
+                                <h2 class="modal-title">${details.title}</h2>
+                                <div class="modal-meta">
+                                    <span>${formatDate(details.release_date)}</span>
+                                    ${details.runtime ? `<span>${formatRuntime(details.runtime)}</span>` : ''}
+                                    <span class="modal-rating">
+                                        <i class="fas fa-star"></i> ${details.vote_average.toFixed(1)}
+                                    </span>
+                                </div>
+                                <div class="modal-genres">
+                                    ${genresHTML}
+                                </div>
+                                <p class="modal-overview">${details.overview || 'No hay descripción disponible.'}</p>
+                                <div class="modal-details">
+                                    <div class="modal-detail">
+                                        <span class="detail-label">Director:</span>
+                                        <span class="detail-value">${directorName}</span>
+                                    </div>
+                                    <div class="modal-detail">
+                                        <span class="detail-label">Reparto principal:</span>
+                                        <span class="detail-value">${mainCast}</span>
+                                    </div>
+                                </div>
+                                <div class="modal-actions">
+                                    <button class="btn btn-primary">
+                                        <i class="fas fa-play"></i> Ver ahora
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Agregar event listeners
+                document.querySelector('.modal-close').addEventListener('click', closeModal);
+                document.querySelector('.modal-overlay').addEventListener('click', closeModal);
+                
+                // Agregar event listener al botón "Ver ahora"
+                const watchNowBtn = document.querySelector('.modal-actions .btn-primary');
+                watchNowBtn.addEventListener('click', () => {
+                    window.open(`go:${details.id}`, '_blank');
+                    closeModal();
+                });
+                
+            } catch (error) {
+                // Mostrar error en el modal
+                const modalContainer = document.querySelector('.modal-container');
+                modalContainer.innerHTML = `
+                    <div class="modal-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <h3>Error al cargar la información</h3>
+                        <p>${error.message || 'Error desconocido'}</p>
+                        <button class="btn btn-secondary" style="margin-top: 1rem;">Cerrar</button>
+                    </div>
+                `;
+                
+                // Agregar event listener al botón de cerrar
+                modalContainer.querySelector('.btn-secondary').addEventListener('click', closeModal);
+            }
+        }
+
+        async function initPage() {
+            try {
+                const videoPromise = loadVideo(document.getElementById('videoPlayer').getAttribute('data-src'));
+                
+                fetchMovieData();
+                fetchRelatedMovies();
+                
+                await Promise.race([
+                    videoPromise,
+                    new Promise(resolve => setTimeout(resolve, 10000))
+                ]);
+                
+                if ('IntersectionObserver' in window) {
+                    const imageObserver = new IntersectionObserver((entries, observer) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const img = entry.target;
+                                if (img.dataset.src) {
+                                    img.src = img.dataset.src;
+                                    img.removeAttribute('data-src');
+                                    imageObserver.unobserve(img);
+                                }
+                            }
+                        });
+                    });
+                    
+                    document.querySelectorAll('img[data-src]').forEach(img => {
+                        imageObserver.observe(img);
+                    });
+                } else {
+                    loadLazyImages();
+                }
+            } catch (error) {
+                console.error('Error durante la inicialización de la página:', error);
+                loadedResources.video = true;
+                checkAllResourcesLoaded();
+            }
+        } 
+
+        window.addEventListener('load', () => {
+            document.getElementById("reloadButton").addEventListener("click", (e) => {
+                e.preventDefault();
+                reloadCurrentVideo();
+            });
+            
+            initPage();
+        });
+
+        window.addEventListener('resize', adjustDetailsHeight);
+        
+        window.addEventListener('error', function(e) {
+            console.error('Error global capturado:', e.message);
+            Object.keys(loadedResources).forEach(key => {
+                if (!loadedResources[key]) {
+                    loadedResources[key] = true;
+                }
+            });
+            checkAllResourcesLoaded();
+        });
+    </script>
+</body>
+</html>
