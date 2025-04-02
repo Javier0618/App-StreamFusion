@@ -1,0 +1,17 @@
+# Configuración de Netlify
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Redirecciones para la API
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Configuración de headers para CORS
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+
