@@ -5,13 +5,15 @@
 
 # Redirecciones para la API
 [[redirects]]
-  from = "/api/*"
+  from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
+  force = true
 
 # Configuración de headers para CORS
 [[headers]]
   for = "/*"
     [headers.values]
     Access-Control-Allow-Origin = "*"
-
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
